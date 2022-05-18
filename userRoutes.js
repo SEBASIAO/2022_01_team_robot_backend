@@ -34,6 +34,7 @@
         app
         .route("/prediction/running/:id")
         .get(userList.getRunningPredictions)
+        .put(userList.editPrediction)
 
         app
         .route("/prediction/finished/:id")

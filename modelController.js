@@ -123,6 +123,15 @@ exports.getRunningPredictions = async (req, res) => {
     res.status(200).send(filter)
 };
 
+exports.editPrediction = async (req, res) => {
+    Prediction.findOneAndUpdate({ _id: req.params.id }, req.body, { new: true }, (err, pred) => {
+        if (err) {
+            res.status(500).send(err);
+        }
+        res.status(200).json(pred);
+    });
+};
+
 exports.getFinishedPredictions = async (req, res) => {
     const find = await Prediction.find({userId: { $eq: req.params.id }})
     const filter = await filterFinishedPredictions(find, req)
