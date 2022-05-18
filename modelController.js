@@ -139,13 +139,18 @@ exports.getFinishedPredictions = async (req, res) => {
 };
 
 async function filterRunningPredictions (predictions, req) {
+    var response = [];
     for(let i = 0; i < predictions.length; i++) {
         const match = await Match.findOne({_id : predictions[i].matchId})
         predictions[i].isFinished = match.is_finished
-        await Prediction.findOneAndUpdate({ _id: predictions[i]._id }, predictions[i], { new: true })
+        const pred = await Prediction.findOneAndUpdate({ _id: predictions[i]._id }, predictions[i], { new: true })
+        response.push({
+            prediction: pred,
+            match : match
+        })
     }
     const filteredPredictions = await Prediction.find({$and: [{userId: { $eq: req.params.id }},{isFinished : {$ne : true}}]})
-    return filteredPredictions
+    return response
 }
 
 async function filterFinishedPredictions (predictions, req) {
