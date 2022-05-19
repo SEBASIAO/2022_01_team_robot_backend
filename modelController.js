@@ -206,6 +206,7 @@ async function filterFinishedPredictions(predictions, req) {
             match : match,
             prediction: filteredPredictions[i]
         })
+        await Prediction.findOneAndUpdate({ _id: filteredPredictions[i]._id }, filteredPredictions[i], { new: true })
     }
     const user = await User.findOneAndUpdate({ _id: req.params.id }, { points: totalPoints.toString() })
     console.log(user)
