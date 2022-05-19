@@ -177,6 +177,7 @@ async function filterRunningPredictions(predictions, req) {
 }
 
 async function filterFinishedPredictions(predictions, req) {
+    var response = [];
     for (let i = 0; i < predictions.length; i++) {
         const match = await Match.findOne({ _id: predictions[i].matchId })
         predictions[i].isFinished = match.is_finished
@@ -201,10 +202,14 @@ async function filterFinishedPredictions(predictions, req) {
         filteredPredictions[i].totalPoints = matchPoints.toString()
         totalPoints += matchPoints
         matchPoints = 0;
+        response.push({
+            match : match,
+            prediction: filteredPredictions[i]
+        })
     }
     const user = await User.findOneAndUpdate({ _id: req.params.id }, { points: totalPoints.toString() })
     console.log(user)
-    return filteredPredictions
+    return response
 }
 
 exports.createPrediction = (req, res) => {
