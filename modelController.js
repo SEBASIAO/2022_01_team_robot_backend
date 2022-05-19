@@ -152,9 +152,7 @@ exports.deletePrediction = async (req, res) => {
             res.status(200).send({ message: "Prediccion eliminada correctamente" });
         }
     }
-    ).catch(error => {
-        res.status(500).send(error)
-    })
+    )
 };
 
 exports.getFinishedPredictions = async (req, res) => {
