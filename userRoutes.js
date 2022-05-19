@@ -32,9 +32,14 @@
         .post(userList.finishMatch);
 
         app
+        .route("/match/:id")
+        .delete(userList.deleteMatch)
+
+        app
         .route("/prediction/running/:id")
         .get(userList.getRunningPredictions)
         .put(userList.editPrediction)
+        .delete(userList.deletePrediction)
 
         app
         .route("/prediction/finished/:id")

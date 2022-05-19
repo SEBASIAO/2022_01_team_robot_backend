@@ -68,12 +68,12 @@ exports.login = (req, res) => {
         } else {
             if (user != null) {
                 if (req.body.pwd == user.pwd) {
-                    res.status(200).send({status : 1, userId: user._id})
+                    res.status(200).send({ status: 1, userId: user._id })
                 } else {
-                    res.status(200).send({status : 2, userId: ""})
+                    res.status(200).send({ status: 2, userId: "" })
                 }
             } else {
-                res.status(200).send({status : 3, userId: ""})
+                res.status(200).send({ status: 3, userId: "" })
             }
         }
     })
@@ -108,6 +108,18 @@ exports.listAllMatcher = (req, res) => {
     });
 };
 
+exports.deleteMatch = async (req, res) => {
+    const deleteMatch = await Match.findByIdAndDelete(req.params.id)
+    
+    if (!deleteMatch) {
+        res.status(404).send({ message: "Partido no encontrado" })
+    } else {
+        await Prediction.deleteMany({ matchId: req.params.id })
+        res.status(200).send({ message: "Partido eliminado" });
+    }
+
+};
+
 exports.finishMatch = (req, res) => {
     Match.findOneAndUpdate({ _id: req.body._id }, req.body, { new: true }, (err, match) => {
         if (err) {
@@ -118,7 +130,7 @@ exports.finishMatch = (req, res) => {
 };
 
 exports.getRunningPredictions = async (req, res) => {
-    const find = await Prediction.find({userId: { $eq: req.params.id }})
+    const find = await Prediction.find({ userId: { $eq: req.params.id } })
     const filter = await filterRunningPredictions(find, req)
     res.status(200).send(filter)
 };
@@ -132,54 +144,67 @@ exports.editPrediction = async (req, res) => {
     });
 };
 
+exports.deletePrediction = async (req, res) => {
+    Prediction.findByIdAndDelete(req.params.id).then(pred => {
+        if (!pred) {
+            res.status(404).send()
+        } else {
+            res.status(200).send({ message: "Prediccion eliminada correctamente" });
+        }
+    }
+    ).catch(error => {
+        res.status(500).send(error)
+    })
+};
+
 exports.getFinishedPredictions = async (req, res) => {
-    const find = await Prediction.find({userId: { $eq: req.params.id }})
+    const find = await Prediction.find({ userId: { $eq: req.params.id } })
     const filter = await filterFinishedPredictions(find, req)
     res.status(200).send(filter)
 };
 
-async function filterRunningPredictions (predictions, req) {
+async function filterRunningPredictions(predictions, req) {
     var response = [];
-    for(let i = 0; i < predictions.length; i++) {
-        const match = await Match.findOne({_id : predictions[i].matchId})
+    for (let i = 0; i < predictions.length; i++) {
+        const match = await Match.findOne({ _id: predictions[i].matchId })
         predictions[i].isFinished = match.is_finished
         const pred = await Prediction.findOneAndUpdate({ _id: predictions[i]._id }, predictions[i], { new: true })
         response.push({
             prediction: pred,
-            match : match
+            match: match
         })
     }
-    const filteredPredictions = await Prediction.find({$and: [{userId: { $eq: req.params.id }},{isFinished : {$ne : true}}]})
+    const filteredPredictions = await Prediction.find({ $and: [{ userId: { $eq: req.params.id } }, { isFinished: { $ne: true } }] })
     return response
 }
 
-async function filterFinishedPredictions (predictions, req) {
-    for(let i = 0; i < predictions.length; i++) {
-        const match = await Match.findOne({_id : predictions[i].matchId})
+async function filterFinishedPredictions(predictions, req) {
+    for (let i = 0; i < predictions.length; i++) {
+        const match = await Match.findOne({ _id: predictions[i].matchId })
         predictions[i].isFinished = match.is_finished
         await Prediction.findOneAndUpdate({ _id: predictions[i]._id }, predictions[i], { new: true })
     }
-    let filteredPredictions = await Prediction.find({$and: [{userId: { $eq: req.params.id }},{isFinished : {$eq : true}}]})
+    let filteredPredictions = await Prediction.find({ $and: [{ userId: { $eq: req.params.id } }, { isFinished: { $eq: true } }] })
     let totalPoints = 0
     let matchPoints = 0
-    for(let i = 0; i < filteredPredictions.length; i++){
-        const match = await Match.findOne({$and: [{_id : filteredPredictions[i].matchId},{is_finished : {$eq : true}}]})
-        if(match.local_goals == filteredPredictions[i].local_goals){
+    for (let i = 0; i < filteredPredictions.length; i++) {
+        const match = await Match.findOne({ $and: [{ _id: filteredPredictions[i].matchId }, { is_finished: { $eq: true } }] })
+        if (match.local_goals == filteredPredictions[i].local_goals) {
             filteredPredictions[i].isLocalGoalsGuessed = true
             matchPoints += 5
         }
-        if(match.visit_goals == filteredPredictions[i].visit_goals){
+        if (match.visit_goals == filteredPredictions[i].visit_goals) {
             filteredPredictions[i].isVisitGoalsGuessed = true
             matchPoints += 5
         }
-        if(filteredPredictions[i].isVisitGoalsGuessed && filteredPredictions[i].isLocalGoalsGuessed){
+        if (filteredPredictions[i].isVisitGoalsGuessed && filteredPredictions[i].isLocalGoalsGuessed) {
             matchPoints += 10
         }
         filteredPredictions[i].totalPoints = matchPoints.toString()
         totalPoints += matchPoints
         matchPoints = 0;
     }
-    const user = await User.findOneAndUpdate({_id: req.params.id}, {points : totalPoints.toString()})
+    const user = await User.findOneAndUpdate({ _id: req.params.id }, { points: totalPoints.toString() })
     console.log(user)
     return filteredPredictions
 }
