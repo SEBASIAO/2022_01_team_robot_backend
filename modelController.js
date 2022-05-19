@@ -68,7 +68,7 @@ exports.login = (req, res) => {
         } else {
             if (user != null) {
                 if (req.body.pwd == user.pwd) {
-                    res.status(200).send({ status: 1, userId: user._id })
+                    res.status(200).send({ status: 1, userId: user._id, isAdmin : user.isAdmin })
                 } else {
                     res.status(200).send({ status: 2, userId: "" })
                 }
